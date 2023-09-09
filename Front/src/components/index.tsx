@@ -1,8 +1,12 @@
-import { Button } from '@chakra-ui/react';
-import React from 'react';
+import React, { useRef } from 'react';
+import { observer } from 'mobx-react-lite';
+import { Input } from '@chakra-ui/react';
+import { LoginStore } from '../store/login-store';
 
 const MainComponent: React.FC = () => {
-    return <Button colorScheme="red">Test</Button>
+    const loginStore = useRef(new LoginStore()).current;
+
+    return <Input value={loginStore.password} onChange={(e) => loginStore.setPassword(e.target.value)} />;
 };
 
-export default MainComponent;
+export default observer(MainComponent);
