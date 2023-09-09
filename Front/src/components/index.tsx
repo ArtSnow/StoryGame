@@ -1,12 +1,8 @@
-import React, { useRef } from 'react';
-import { observer } from 'mobx-react-lite';
-import { Input } from '@chakra-ui/react';
-import { LoginStore } from '../store/login-store';
+import React from 'react';
+import LoginScreen from '../screens/LoginScreen';
 
 const MainComponent: React.FC = () => {
-    const loginStore = useRef(new LoginStore()).current;
-
-    return <Input value={loginStore.password} onChange={(e) => loginStore.setPassword(e.target.value)} />;
+    return <LoginScreen />;
 };
 
-export default observer(MainComponent);
+export default MainComponent;
