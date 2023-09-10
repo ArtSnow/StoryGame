@@ -1,7 +1,7 @@
 import { observable, action, makeObservable } from 'mobx';
 import { WSManager } from '../../ws';
 import { MessageBody } from '../../ws/message';
-import { Monster, Player } from '../../service/state';
+import { Monster, Player, Property } from '../../service/state';
 import APIService from '../../service';
 
 type MasterStoreProps = {
@@ -12,7 +12,7 @@ type MasterStoreProps = {
 export class MasterStore {
     private id: string;
     private password: string;
-    private wsManager: WSManager;
+    private wsManager!: WSManager;
 
     @observable
     private loading: boolean;
@@ -37,14 +37,6 @@ export class MasterStore {
         this.messages = [];
         this.players = [];
         this.monster = null;
-        this.wsManager = new WSManager({ id: this.id, password: this.password });
-
-        this.wsManager.addListener('msg', (body) => {
-            this.addMessage(body);
-        });
-        this.wsManager.addListener('player', (body) => {
-            this.addPlayer(body);
-        });
 
         this.init();
 
@@ -61,9 +53,33 @@ export class MasterStore {
             this.setPlayers(response.players);
             this.setMonster(response.monster);
             this.setError(null);
+            this.initWS();
         }
 
         this.setLoading(false);
+    };
+
+    private initWS = () => {
+        this.wsManager = new WSManager({ id: this.id, password: this.password });
+
+        this.wsManager.addListener('msg', (body) => {
+            this.addMessage(body);
+        });
+
+        this.wsManager.addListener('player', (body) => {
+            if (!this.players.find((el) => el.id === body.id)) {
+                this.addPlayer(body);
+                return;
+            }
+
+            this.players = this.players.map((el) => {
+                if (el.id === body.id) {
+                    return el;
+                }
+
+                return body;
+            });
+        });
     };
 
     @action
@@ -92,10 +108,6 @@ export class MasterStore {
         this.monster = monster;
     };
 
-    sendNewMessage = (message: string) => this.wsManager.sendMessage('add-msg', { msg: message });
-
-    sendNewPlayer = (message: string) => this.wsManager.sendMessage('add-msg', { msg: message });
-
     getMessages = () => this.messages;
 
     getPlayers = () => this.players;
@@ -105,4 +117,10 @@ export class MasterStore {
     getError = () => this.error;
 
     getMonster = () => this.monster;
+
+    createNewMessage = (message: string) => this.wsManager.sendMessage('add-msg', { msg: message });
+
+    savePlayerProps = (playerId: string, props: Property[]) => {
+        this.wsManager.sendMessage('update-player-props', { id: playerId, properties: props });
+    };
 }

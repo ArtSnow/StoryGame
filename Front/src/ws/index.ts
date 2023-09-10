@@ -1,6 +1,7 @@
 import { AddMessageName, AddMessageBody } from './add-message';
 import { MessageBody, MessageName } from './message';
 import { PlayerBody, PlayerName } from './player';
+import { UpdatePlayerPropsBody, UpdatePlayerPropsName } from './update-player-props';
 
 type ReceiveMessagesList = {
     [MessageName]: MessageBody
@@ -9,6 +10,7 @@ type ReceiveMessagesList = {
 
 type SendMessagesList = {
     [AddMessageName]: AddMessageBody
+    [UpdatePlayerPropsName]: UpdatePlayerPropsBody
 };
 
 type Message = {
