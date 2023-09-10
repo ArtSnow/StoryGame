@@ -1,34 +1,45 @@
-import React, { useCallback, useRef } from 'react';
+import React, { useCallback, useRef, useState } from 'react';
 import { observer } from 'mobx-react-lite';
-import { Input, InputGroup, InputLeftAddon } from '@chakra-ui/input';
 import Paint from '../../components/Paint';
 import { Button } from '@chakra-ui/button';
 import { Box } from '@chakra-ui/layout';
 import { LoginStore } from './store';
-import APIService from '../../service';
+import Input from './Input';
+import { useToast } from '@chakra-ui/react';
+import { createErrorToast } from '../../utils';
+import { Role } from '../../service/login';
 
-const LoginScreen: React.FC = () => {
+type LoginScreenProps = {
+    join(props: { password: string, id: string, role: Role }): void
+};
+
+const LoginScreen: React.FC<LoginScreenProps> = (props) => {
+    const { join } = props;
+
     const loginStore = useRef(new LoginStore()).current;
     const canvas = useRef<HTMLCanvasElement>(null);
-
-    const name = loginStore.getName();
-    const password = loginStore.getPassword();
-
-    const onNameChange: React.ChangeEventHandler<HTMLInputElement> = useCallback((e) => {
-        loginStore.setName(e.target.value);
-    }, []);
-
-    const onPasswordChange: React.ChangeEventHandler<HTMLInputElement> = useCallback((e) => {
-        loginStore.setPassword(e.target.value);
-    }, []);
+    const [loading, setLoading] = useState(false);
+    const toast = useToast();
 
     const onLogin = useCallback(async () => {
         const image = canvas.current?.toDataURL('image/jpeg', 1);
 
         if (image) {
-            APIService.makeRequest('/login', { name, password, image });
+            setLoading(true);
+            const data = await loginStore.login(image);
+
+            if ('error' in data) {
+                toast(createErrorToast(data.error));
+            } else {
+                join({
+                    id: 'test',
+                    password: data.password,
+                    role: data.role,
+                });
+            }
+            setLoading(false);
         }
-    }, [name, password]);
+    }, []);
 
     return <Box
         w="full"
@@ -36,21 +47,9 @@ const LoginScreen: React.FC = () => {
         flexDirection="column"
         alignItems="center"
     >
-        <Box w="xl">
-            <InputGroup size="lg" mt="24">
-                <InputLeftAddon bgColor="blue.600" borderColor="blue.600" color="white">Имя</InputLeftAddon>
-                <Input
-                    value={name}
-                    onChange={onNameChange}
-                />
-            </InputGroup>
-            <InputGroup size="lg" mb="16" mt="6">
-                <InputLeftAddon bgColor="blue.600" borderColor="blue.600" color="white">Пароль</InputLeftAddon>
-                <Input
-                    value={password}
-                    onChange={onPasswordChange}
-                />
-            </InputGroup>
+        <Box w="xl" mt="24" mb="10">
+            <Input getValue={loginStore.getName} onChange={loginStore.setName} label="Имя" />
+            <Input getValue={loginStore.getPassword} onChange={loginStore.setPassword} label="Пароль" />
         </Box>
         <Paint width={600} height={400} ref={canvas} />
         <Button
@@ -58,6 +57,7 @@ const LoginScreen: React.FC = () => {
             mt="16"
             colorScheme="teal"
             onClick={onLogin}
+            isLoading={loading}
         >
             Погнали
         </Button>
